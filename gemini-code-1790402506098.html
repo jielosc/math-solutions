@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>概率模型与期望的线性性专题解析</title>
+  
+  <!-- KaTeX 数学公式渲染引擎 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-light: #eff6ff;
+      --accent: #059669;
+      --purple: #7c3aed;
+      --warning-bg: #fffbeb;
+      --warning-border: #f59e0b;
+      --nav-height: 56px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      padding-top: calc(var(--nav-height) + 12px);
+      padding-bottom: 84px; /* 为底部控制栏留出安全距离 */
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* 顶部常驻切换控制台 */
+    .top-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 0 16px;
+    }
+
+    .segmented-control {
+      display: flex;
+      background: #e2e8f0;
+      border-radius: 999px;
+      padding: 3px;
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .segment-btn {
+      flex: 1;
+      text-align: center;
+      padding: 6px 12px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .segment-btn.active {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    /* 滑动主视口与轨道 */
+    .slider-viewport {
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+      transition: height 0.3s ease;
+    }
+
+    .slider-track {
+      display: flex;
+      width: 200%;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    .slide-page {
+      width: 50%;
+      padding: 0 16px;
+      box-sizing: border-box;
+    }
+
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    /* 卡片与模块布局 */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    }
+
+    .swipe-hint {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 1.45rem;
+      line-height: 1.4;
+      color: #0f172a;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h2::before {
+      content: "";
+      width: 4px;
+      height: 1.1em;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .question-card {
+      background: #f8fafc;
+      border-left: 4px solid var(--primary);
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--primary);
+    }
+
+    .solution-title {
+      color: var(--accent);
+    }
+
+    .step-title {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #0f172a;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    /* 列表与文字细节 */
+    p { margin: 8px 0; font-size: 0.95rem; }
+    ol, ul { padding-left: 20px; margin: 8px 0; font-size: 0.95rem; }
+    li { margin-bottom: 6px; }
+
+    /* 高亮框与结果指示器 */
+    .highlight-box {
+      background-color: var(--warning-bg);
+      border-left: 4px solid var(--warning-border);
+      padding: 12px 14px;
+      margin: 14px 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .formula-banner {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+      margin: 14px 0;
+      font-size: 0.9rem;
+    }
+
+    /* 响应式网格与子卡片 */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+    }
+
+    .sub-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      background: #fafbfc;
+    }
+    .sub-card.blue { border-top: 4px solid var(--primary); }
+    .sub-card.purple { border-top: 4px solid var(--purple); }
+
+    .tag {
+      font-size: 0.72rem;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .tag-blue { background: #dbeafe; color: var(--primary); }
+    .tag-purple { background: #ede9fe; color: var(--purple); }
+
+    .result-pill {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      margin-top: 8px;
+      font-size: 0.9rem;
+    }
+
+    /* 表格防溢出与移动端横滑 */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 14px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      min-width: 320px;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      background: #fff;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* KaTeX 公式自适应横滑（防止移动端撑爆容器） */
+    .katex-display {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 6px 0;
+      margin: 8px 0 !important;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* 底部悬浮控制栏 */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+      z-index: 1000;
+    }
+
+    .bar-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .bar-btn:active {
+      background: #e2e8f0;
+    }
+
+    .bar-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .indicators {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      transition: all 0.25s;
+    }
+
+    .dot.active {
+      width: 18px;
+      border-radius: 4px;
+      background: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部常驻切换胶囊 -->
+  <nav class="top-nav">
+    <div class="segmented-control">
+      <button class="segment-btn active" id="tab0" onclick="switchSlide(0)">
+        题一：配球与顶球模型
+      </button>
+      <button class="segment-btn" id="tab1" onclick="switchSlide(1)">
+        题二：环形传递博弈
+      </button>
+    </div>
+  </nav>
+
+  <!-- 滑动内容视口 -->
+  <div class="slider-viewport" id="sliderViewport">
+    <div class="slider-track" id="sliderTrack">
+
+      <!-- ================= 第一页：题目一 ================= -->
+      <section class="slide-page" id="page0">
+        <div class="container">
+          <div class="swipe-hint">
+            <span>👈</span> 左右轻扫或点击按钮切换题目 <span>👉</span>
+          </div>
+
+          <div class="card" style="border-top: 4px solid var(--primary);">
+            <span class="badge">高考/模考压轴</span>
+            <h1>概率分布列与数学期望综合题</h1>
+            <p class="subtitle">考查模型：置换群的对称性、0-1指示变量法</p>
+
+            <!-- 题目内容 -->
+            <div class="card question-card" style="margin-bottom: 0;">
+              <div class="section-title">📝 原题内容</div>
+              <p><strong>17.（15分）</strong> 将编号为 $1, 2, \cdots, n\ (n \geqslant 3, n \in \mathbf{N}^*)$ 的 $n$ 个小球随机放入编号为 $a_1, a_2, \cdots, a_n$ 的盒子，每个盒子里仅放一个小球，设编号为 $a_i\ (1 \leqslant i \leqslant n, i \in \mathbf{N}^*)$ 的盒子里小球的编号为 $b_i$，若 $b_i = i$，则称该小球为“配球”。</p>
+              
+              <p><strong>(1)</strong> 当 $n = 3$ 时，求“配球”个数 $X$ 的分布列和期望；</p>
+              
+              <p><strong>(2)</strong> 已知：若随机变量 $X_i$ 服从两点分布，且 $P(X_i = 1) = p_i,\ P(X_i = 0) = 1 - p_i,\ i = 1, 2, \cdots, n$，则 
+              $$E\left(\sum_{i=1}^n X_i\right) = \sum_{i=1}^n p_i$$
+              </p>
+              <ul>
+                <li><strong>(ⅰ)</strong> 求“配球”个数 $X$ 的期望；</li>
+                <li><strong>(ⅱ)</strong> 若 $b_i$ 满足：当 $i = 1$ 时，$b_i > b_{i+1}$；当 $i = n$ 时，$b_i > b_{i-1}$；当 $2 \leqslant i \leqslant n-1$ 时，$b_i > b_{i-1}$ 且 $b_i > b_{i+1}$，则称该小球为“顶球”，求“顶球”个数 $Y$ 的期望。</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 解析与思路 -->
+          <div class="card">
+            <div class="section-title solution-title">💡 详细解析与思路</div>
+
+            <div class="highlight-box">
+              <strong>核心方法：0-1指示变量法与期望的线性性</strong><br>
+              当求解计数型随机变量的期望时，若直接求联合分布极其繁琐，可以通过引入指示变量拆分为单点概率之和，即 $E(\sum X_i) = \sum P(X_i=1)$。<strong>无论变量之间是否独立，该公式均成立。</strong>
+            </div>
+
+            <div class="step-title">(1) 求 $n=3$ 时 $X$ 的分布列与期望</div>
+            <p>当 $n=3$ 时，全排列总数 $3! = 6$ 种：</p>
+            <ul>
+              <li>$(1, 2, 3)$：配球数为 3；</li>
+              <li>$(1, 3, 2),\ (3, 2, 1),\ (2, 1, 3)$：配球数均为 1；</li>
+              <li>$(2, 3, 1),\ (3, 1, 2)$：配球数均为 0。</li>
+            </ul>
+            <p>因此随机变量 $X$ 取值为 $0, 1, 2, 3$（不存在恰好 2 个配球的情况）：</p>
+            <ul>
+              <li>$P(X = 0) = \dfrac{2}{6} = \dfrac{1}{3}$</li>
+              <li>$P(X = 1) = \dfrac{3}{6} = \dfrac{1}{2}$</li>
+              <li>$P(X = 2) = 0$</li>
+              <li>$P(X = 3) = \dfrac{1}{6}$</li>
+            </ul>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>$X$</th>
+                    <th>0</th>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>3</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>$P$</strong></td>
+                    <td>$\dfrac{1}{3}$</td>
+                    <td>$\dfrac{1}{2}$</td>
+                    <td>$0$</td>
+                    <td>$\dfrac{1}{6}$</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p>期望计算为：
+            $$E(X) = 0 \times \frac{1}{3} + 1 \times \frac{1}{2} + 2 \times 0 + 3 \times \frac{1}{6} = 1$$
+            </p>
+
+            <div class="step-title">(2)(ⅰ) 求“配球”个数 $X$ 的期望</div>
+            <p>设指示变量 $X_i$：第 $i$ 个球为配球时 $X_i=1$，否则为 $0$。由对称性：</p>
+            $$P(X_i = 1) = \frac{(n-1)!}{n!} = \frac{1}{n}$$
+            <p>利用期望的线性性累加：</p>
+            $$E(X) = \sum_{i=1}^n P(X_i = 1) = n \times \frac{1}{n} = 1$$
+
+            <div class="step-title">(2)(ⅱ) 求“顶球”个数 $Y$ 的期望</div>
+            <p>设指示变量 $Y_i$ 代表位置 $i$ 是否为“顶球”：</p>
+            <ol>
+              <li>
+                <strong>两端端点 ($i=1$ 与 $i=n$)：</strong><br>
+                仅需比单侧相邻大，由大小对等性：
+                $$P(Y_1=1) = P(b_1 > b_2) = \frac{1}{2}, \quad P(Y_n=1) = P(b_n > b_{n-1}) = \frac{1}{2}$$
+              </li>
+              <li>
+                <strong>中间位置 ($2 \leqslant i \leqslant n-1$)：</strong><br>
+                需在 $\{b_{i-1}, b_i, b_{i+1}\}$ 三数中最大。由轮换对称性，三个互异数字中任一个最大的概率均为 $\frac{1}{3}$：
+                $$P(Y_i=1) = \frac{1}{3}$$
+              </li>
+            </ol>
+            <p>求和可得：</p>
+            $$\begin{aligned}             E(Y) &= P(Y_1=1) + P(Y_n=1) + \sum_{i=2}^{n-1} P(Y_i=1) \\                  &= \frac{1}{2} + \frac{1}{2} + (n-2) \times \frac{1}{3} = \frac{n+1}{3}             \end{aligned}$$
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 第二页：题目二 ================= -->
+      <section class="slide-page" id="page1">
+        <div class="container">
+          <div class="swipe-hint">
+            <span>👈</span> 左右轻扫或点击按钮切换题目 <span>👉</span>
+          </div>
+
+          <div class="card" style="border-top: 4px solid var(--purple);">
+            <span class="badge" style="background:#ede9fe; color:var(--purple);">概率模型母题拆解</span>
+            <h1>环形传递博弈与期望的线性性</h1>
+            <p class="subtitle">从“全班硬币游戏”到“小朋友分糖果”：透过表象看本质</p>
+
+            <!-- 双题同台对照 -->
+            <h2>双题同台对照</h2>
+            <div class="grid-2">
+              <div class="sub-card blue">
+                <span class="tag tag-blue">题型 A（54人硬币）</span>
+                <p>54人围成一圈，每人1枚硬币。同时独立等概率选择：<strong>保留、给左边、给右边</strong>。求手中空手人数期望 $E(X)$。</p>
+                <div class="result-pill">
+                  <span>最终期望：</span>
+                  <span style="color: var(--primary);">$16$</span>
+                </div>
+              </div>
+
+              <div class="sub-card purple">
+                <span class="tag tag-purple">题型 B（12人糖果）</span>
+                <p>12名小朋友围成一圈，每人1颗糖。同时独立等概率将糖果<strong>给左侧或给右侧（不保留）</strong>。求手中空手人数期望 $E(Y)$。</p>
+                <div class="result-pill">
+                  <span>最终期望：</span>
+                  <span style="color: var(--purple);">$3$</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 机制对比表 -->
+          <div class="card">
+            <h2>参量解构与机制对比</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>比较维度</th>
+                    <th>题型 A（54人硬币）</th>
+                    <th>题型 B（12人糖果）</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>总人数 $n$</strong></td>
+                    <td>$n = 54$</td>
+                    <td>$n = 12$</td>
+                  </tr>
+                  <tr>
+                    <td><strong>个人行动选项</strong></td>
+                    <td>3 种（左、留、右，各 $\frac{1}{3}$）</td>
+                    <td>2 种（左、右，各 $\frac{1}{2}$，不保留）</td>
+                  </tr>
+                  <tr>
+                    <td><strong>潜在给入来源</strong></td>
+                    <td>3 处（自己、左邻、右邻）</td>
+                    <td>2 处（自身必出，仅看左邻、右邻）</td>
+                  </tr>
+                  <tr>
+                    <td><strong>单人“空手”概率</strong></td>
+                    <td>$$P = \left(1 - \frac{1}{3}\right)^3 = \frac{8}{27}$$</td>
+                    <td>$$P = 1 \times \left(\frac{1}{2}\right) \times \left(\frac{1}{2}\right) = \frac{1}{4}$$</td>
+                  </tr>
+                  <tr>
+                    <td><strong>总期望计算</strong></td>
+                    <td>$$E(X) = 54 \times \frac{8}{27} = 16$$</td>
+                    <td>$$E(Y) = 12 \times \frac{1}{4} = 3$$</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 本质透析 -->
+          <div class="card">
+            <h2>三层本质透析：为什么能一眼秒杀？</h2>
+
+            <p><strong>第一层：破解“分布列陷阱”——期望的普适线性性</strong></p>
+            <p>
+              环上相邻人员是否空手强相关，如果执着于求分布列 $P(X=k)$ 会陷入图论与容斥死循环。利用期望线性性质公式：
+              $$E\left(\sum_{i=1}^n I_i\right) = \sum_{i=1}^n E(I_i)$$
+              该式<strong>完全不要求变量间相互独立</strong>，极大简化了计算。
+            </p>
+
+            <div class="highlight-box">
+              <strong>第二层：视角维度的跃迁——从“发射追踪”到“受体漏斗”</strong><br>
+              顺向追踪“物品送给了谁”会导致状态呈树状爆炸。
+              <strong>逆向思维：</strong>只盯准某一个口袋作为“受体”，直接计算所有能向其注水的独立源头“恰好都未投递给它”的概率。
+            </div>
+
+            <p><strong>第三层：微观独立的保真性</strong></p>
+            <p>
+              虽然全局相邻口袋相关，但在微观切片下，决定某个特定口袋的所有源头（如左邻居和右邻居）是独立自主行动的，直接适用乘法公式。
+            </p>
+
+            <div class="formula-banner">
+              <strong>此类环形分配问题的通用秒杀母公式</strong><br>
+              若环上有 $n$ 人，保留概率 $p_S$，左传概率 $p_L$，右传概率 $p_R$（满足 $p_S + p_L + p_R = 1$），则空手人数期望恒为：
+              $$E = n \cdot (1 - p_S) \cdot (1 - p_R) \cdot (1 - p_L)$$
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- 底部悬浮控制栏 -->
+  <footer class="bottom-bar">
+    <button class="bar-btn" id="prevBtn" onclick="switchSlide(0)" disabled>
+      ← 上一题
+    </button>
+    <div class="indicators">
+      <div class="dot active" id="dot0"></div>
+      <div class="dot" id="dot1"></div>
+    </div>
+    <button class="bar-btn" id="nextBtn" onclick="switchSlide(1)">
+      下一题 →
+    </button>
+  </footer>
+
+  <script>
+    let currentIndex = 0;
+    const totalSlides = 2;
+    const track = document.getElementById('sliderTrack');
+    const viewport = document.getElementById('sliderViewport');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    // 切换滑块函数
+    function switchSlide(index) {
+      if (index < 0 || index >= totalSlides) return;
+      currentIndex = index;
+
+      // 1. 横向平移
+      track.style.transform = `translateX(-${currentIndex * 50}%)`;
+
+      // 2. 更新顶部 Tab
+      document.querySelectorAll('.segment-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === currentIndex);
+      });
+
+      // 3. 更新底部圆点与前后按钮状态
+      document.querySelectorAll('.dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentIndex);
+      });
+      prevBtn.disabled = (currentIndex === 0);
+      nextBtn.disabled = (currentIndex === totalSlides - 1);
+
+      // 4. 动态调整视口高度适应当前页面
+      adjustViewportHeight();
+
+      // 5. 切换后平滑回到顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 动态高度同步（消除长短页面切换时底部出现大片空白或截断）
+    function adjustViewportHeight() {
+      const activePage = document.getElementById(`page${currentIndex}`);
+      if (activePage) {
+        viewport.style.height = `${activePage.offsetHeight}px`;
+      }
+    }
+
+    // 移动端手势滑动支持 (Touch Events)
+    let startX = 0;
+    let startY = 0;
+    let isTracking = false;
+
+    viewport.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isTracking = true;
+    }, { passive: true });
+
+    viewport.addEventListener('touchend', (e) => {
+      if (!isTracking) return;
+      isTracking = false;
+      
+      const deltaX = e.changedTouches[0].clientX - startX;
+      const deltaY = e.changedTouches[0].clientY - startY;
+
+      // 判定条件：横向位移大于50px，且横向位移幅度明显大于纵向位移（防止干扰正常垂直滑动页面）
+      if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+        if (deltaX < 0 && currentIndex < totalSlides - 1) {
+          switchSlide(currentIndex + 1); // 向左滑，看下一题
+        } else if (deltaX > 0 && currentIndex > 0) {
+          switchSlide(currentIndex - 1); // 向右滑，看上一题
+        }
+      }
+    }, { passive: true });
+
+    // 初始化数学公式渲染与高度计算
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof renderMathInElement === 'function') {
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+          ],
+          throwOnError: false
+        });
+      }
+      setTimeout(adjustViewportHeight, 150);
+    });
+
+    window.addEventListener('resize', adjustViewportHeight);
+    window.addEventListener('load', adjustViewportHeight);
+  </script>
+</body>
+</html>
