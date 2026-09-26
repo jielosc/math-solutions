@@ -1,0 +1,11 @@
+{
+  "name": "math-solutions",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/watch.mjs",
+    "publish": "node scripts/watch.mjs --once"
+  },
+  "engines": { "node": ">=22" }
+}

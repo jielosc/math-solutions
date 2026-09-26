@@ -1,0 +1,10 @@
+_site/
+.local/
+node_modules/
+.env
+.env.*
+Thumbs.db
+.DS_Store
+*.tmp
+*.part
+private/
